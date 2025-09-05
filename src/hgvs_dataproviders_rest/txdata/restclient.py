@@ -9,8 +9,8 @@ import os
 from typing import List, Optional, Union
 
 import requests
-from hgvs.dataproviders.interface import Interface
-from hgvs.dataproviders.seqfetcher import SeqFetcher
+
+from src.hgvs_dataproviders_rest.txdata.txdata_interface import TxDataInterface
 
 
 def connect():
@@ -19,12 +19,11 @@ def connect():
     return UTAREST(url)
 
 
-class UTAREST(Interface):
+class UTAREST(TxDataInterface):
     required_version = "1.0"
 
     def __init__(self, server_url, mode=None, cache=None):
         self.server = server_url
-        self.seqfetcher = SeqFetcher()
         self.pingresponse = requests.get(server_url + "/ping", timeout=5).json()
         super(UTAREST, self).__init__(mode, cache)
 
@@ -71,15 +70,6 @@ class UTAREST(Interface):
                 retval += ("{name}={param}").format(name=name, param=param)
                 params_added = True
         return retval
-
-    def get_seq(self, ac: str, start_i: Optional[int] = None, end_i: Optional[int] = None) -> str:
-        """
-        returns a sequence for a given accession.
-        can return a portion of a sequence when start and end indices are specified.
-        """
-        url = ("{serv}/seq/{ac}").format(serv=self.server, ac=ac)
-        url += self.optional_parameters(["start_i", "end_i"], [start_i, end_i])
-        return requests.get(url, timeout=120).json()
 
     def get_acs_for_protein_seq(self, seq: str) -> List:
         """
