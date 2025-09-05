@@ -17,6 +17,7 @@ from bioutils.assemblies import make_ac_name_map
 from bioutils.digests import seq_md5
 from urllib import parse as urlparse
 
+from src import hgvs_dataproviders_rest
 from src.hgvs_dataproviders_rest import HGVSError, HGVSDataNotAvailableError
 from src.hgvs_dataproviders_rest.txdata.txdata_interface import TxDataInterface
 
@@ -413,7 +414,9 @@ class UTA_postgresql(UTABase):
     def __init__(
         self,
         url,
-        pooling=hgvs.global_config.uta.pooling,
+        pooling=True,
+        pool_min: int=1,
+        pool_max: int=10,
         application_name=None,
         mode=None,
         cache=None,
@@ -422,6 +425,8 @@ class UTA_postgresql(UTABase):
             raise Exception("No schema name provided in {url}".format(url=url))
         self.application_name = application_name
         self.pooling = pooling
+        self.pool_min = pool_min
+        self.pool_max = pool_max
         self._conn = None
         self._pool = None
         # If we're using connection pooling, track the set of DB
@@ -452,12 +457,11 @@ class UTA_postgresql(UTABase):
             database=self.url.database,
             user=self.url.username,
             password=self.url.password,
-            application_name=self.application_name + "/" + hgvs.__version__,
+            application_name=self.application_name + "/" + hgvs_dataproviders_rest.__version__,
         )
         if self.pooling:
             _logger.info("Using UTA ThreadedConnectionPool")
-            self._pool = psycopg2.pool.ThreadedConnectionPool(
-                hgvs.global_config.uta.pool_min, hgvs.global_config.uta.pool_max, **conn_args
+            self._pool = psycopg2.pool.ThreadedConnectionPool(self.pool_min, self.pool_max, **conn_args
             )
         else:
             self._conn = psycopg2.connect(**conn_args)
