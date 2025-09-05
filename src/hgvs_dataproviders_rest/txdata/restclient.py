@@ -22,21 +22,22 @@ def connect():
 class UTAREST(TxDataInterface):
     required_version = "1.0"
 
-    def __init__(self, server_url, mode=None, cache=None):
+    def __init__(self, server_url, mode=None, cache=None, timeout=30):
         self.server = server_url
-        self.pingresponse = requests.get(server_url + "/ping", timeout=5).json()
+        self.application_name = "UTA REST"
+        self.timeout = timeout
+        self.pingresponse = requests.get(server_url + "/ping", timeout=self.timeout).json()
         super(UTAREST, self).__init__(mode, cache)
 
     def __str__(self):
+        n = type(self).__name__,
+        self = self,
+        dv = self.data_version(),
+        sv = self.schema_version(),
+        sf = self.sequence_source(),
         return (
-            "{n} <data_version:{dv}; schema_version:{sv}; application_name={self.application_name};"
-            " url={self.url}; sequences-from={sf}>"
-        ).format(
-            n=type(self).__name__,
-            self=self,
-            dv=self.data_version(),
-            sv=self.schema_version(),
-            sf=self.sequence_source(),
+            f"{n} <data_version:{dv}; schema_version:{sv}; application_name={self.application_name};"
+            f" url={self.url}; sequences-from={sf}>"
         )
 
     ############################################################################
@@ -67,7 +68,7 @@ class UTAREST(TxDataInterface):
             if param:
                 if params_added:
                     retval += "&"
-                retval += ("{name}={param}").format(name=name, param=param)
+                retval += f"{name}={param}"
                 params_added = True
         return retval
 
@@ -78,8 +79,8 @@ class UTAREST(TxDataInterface):
         MD5-based accession (MD5_01234abc...def56789) at the end of the
         list.
         """
-        url = ("{serv}/acs_for_protein_seq/{seq}").format(serv=self.server, seq=seq)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/acs_for_protein_seq/{seq}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_gene_info(self, gene: str) -> Union[dict, None]:
         """
@@ -99,8 +100,8 @@ class UTAREST(TxDataInterface):
         }
 
         """
-        url = ("{serv}/gene_info/{gene}").format(serv=self.server, gene=gene)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/gene_info/{self.gene}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_tx_exons(self, tx_ac: str, alt_ac: str, alt_aln_method: str) -> List[dict]:
         """
@@ -148,10 +149,8 @@ class UTAREST(TxDataInterface):
         'NM_199425.2'
 
         """
-        url = ("{serv}/tx_exons/{tx_ac}/{alt_ac}?alt_aln_method={alt_aln_method}").format(
-            serv=self.server, tx_ac=tx_ac, alt_ac=alt_ac, alt_aln_method=alt_aln_method
-        )
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/tx_exons/{tx_ac}/{alt_ac}?alt_aln_method={alt_aln_method}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_tx_for_gene(self, gene: str) -> Union[List[dict], None]:
         """
@@ -160,8 +159,8 @@ class UTAREST(TxDataInterface):
         :param gene: HGNC gene name
         :type gene: str
         """
-        url = ("{serv}/tx_for_gene/{gene}").format(serv=self.server, gene=gene)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/tx_for_gene/{gene}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_tx_for_region(self, alt_ac: str, alt_aln_method: str, start_i: int, end_i: int) -> Union[List[dict], None]:
         """
@@ -172,10 +171,8 @@ class UTAREST(TxDataInterface):
         :param int start_i: 5' bound of region
         :param int end_i: 3' bound of region
         """
-        url = ("{serv}/tx_for_region/{alt_ac}?alt_aln_method={alt_aln_method}&start_i={start_i}&end_i={end_i}").format(
-            serv=self.server, alt_ac=alt_ac, alt_aln_method=alt_aln_method, start_i=start_i, end_i=end_i
-        )
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/tx_for_region/{alt_ac}?alt_aln_method={alt_aln_method}&start_i={start_i}&end_i={end_i}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_alignments_for_region(
         self, alt_ac: str, start_i: int, end_i: int, alt_aln_method: Optional[str] = None
@@ -188,11 +185,9 @@ class UTAREST(TxDataInterface):
         :param int end_i: 3' bound of region
         :param str alt_aln_method: OPTIONAL alignment method (e.g., splign)
         """
-        url = ("{serv}/alignments_for_region/{alt_ac}?start_i={start_i}&end_i={end_i}").format(
-            serv=self.server, alt_ac=alt_ac, start_i=start_i, end_i=end_i
-        )
+        url = f"{self.server}/alignments_for_region/{alt_ac}?start_i={start_i}&end_i={end_i}"
         self.optional_parameters(["alt_aln_method"], [alt_aln_method])
-        return requests.get(url, timeout=5).json()
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_tx_identity_info(self, tx_ac: str) -> dict:
         """returns features associated with a single transcript.
@@ -212,8 +207,8 @@ class UTAREST(TxDataInterface):
         }
 
         """
-        url = ("{serv}/tx_identity_info/{tx_ac}").format(serv=self.server, tx_ac=tx_ac)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/tx_identity_info/{tx_ac}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_tx_info(self, tx_ac: str, alt_ac: str, alt_aln_method: str) -> dict:
         """return a single transcript info for supplied accession (tx_ac, alt_ac, alt_aln_method), or None if not found
@@ -238,10 +233,8 @@ class UTAREST(TxDataInterface):
         }
 
         """
-        url = ("{serv}/tx_info/{tx_ac}/{alt_ac}?alt_aln_method={alt_aln_method}").format(
-            serv=self.server, tx_ac=tx_ac, alt_ac=alt_ac, alt_aln_method=alt_aln_method
-        )
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/tx_info/{tx_ac}/{alt_ac}?alt_aln_method={alt_aln_method}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_tx_mapping_options(self, tx_ac: str) -> Union[List[dict], None]:
         """Return all transcript alignment sets for a given transcript
@@ -260,8 +253,8 @@ class UTAREST(TxDataInterface):
         }
 
         """
-        url = ("{serv}/tx_mapping_options/{tx_ac}").format(serv=self.server, tx_ac=tx_ac)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/tx_mapping_options/{tx_ac}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_similar_transcripts(self, tx_ac: str) -> Union[List[dict], None]:
         """Return a list of transcripts that are similar to the given
@@ -303,16 +296,16 @@ class UTAREST(TxDataInterface):
         sequence.
 
         """
-        url = ("{serv}/similar_transcripts/{tx_ac}").format(serv=self.server, tx_ac=tx_ac)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/similar_transcripts/{tx_ac}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_pro_ac_for_tx_ac(self, tx_ac: str) -> Union[str, None]:
         """Return the (single) associated protein accession for a given transcript
         accession, or None if not found."""
-        url = ("{serv}/pro_ac_for_tx_ac/{tx_ac}").format(serv=self.server, tx_ac=tx_ac)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/pro_ac_for_tx_ac/{tx_ac}"
+        return requests.get(url, timeout=self.timeout).json()
 
     def get_assembly_map(self, assembly_name: str) -> dict:
         """Return a list of accessions for the specified assembly name (e.g., GRCh38.p5)."""
-        url = ("{serv}/assembly_map/{assembly_name}").format(serv=self.server, assembly_name=assembly_name)
-        return requests.get(url, timeout=5).json()
+        url = f"{self.server}/assembly_map/{assembly_name}"
+        return requests.get(url, timeout=self.timeout).json()
