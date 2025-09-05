@@ -16,10 +16,10 @@ from src.hgvs_dataproviders_rest.txdata.txdata_interface import TxDataInterface
 def connect():
     # Eventually replace this fake default url :)
     url = os.environ.get("UTAREST_URL", "https://api.biocommons.org/utarest/0")
-    return UTAREST(url)
+    return UTARESTService(url)
 
 
-class UTAREST(TxDataInterface):
+class UTARESTService(TxDataInterface):
     required_version = "1.0"
 
     def __init__(self, server_url, mode=None, cache=None, timeout=30):
@@ -27,7 +27,7 @@ class UTAREST(TxDataInterface):
         self.application_name = "UTA REST"
         self.timeout = timeout
         self.pingresponse = requests.get(server_url + "/ping", timeout=self.timeout).json()
-        super(UTAREST, self).__init__(mode, cache)
+        super().__init__()
 
     def __str__(self):
         n = type(self).__name__,
