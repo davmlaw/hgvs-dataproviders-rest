@@ -6,6 +6,10 @@ from src.hgvs_dataproviders_rest.txdata.txdata_interface import TxDataInterface
 
 
 class DataProviderDelegator(Interface):
+    """
+        This class implements the historical HGVS DataProvider (Interface) by delegating to
+        a tx_data and seqfetcher objects
+    """
     def __init__(self, tx_data: TxDataInterface, seqfetcher: SeqFetcherInterface):
         super().__init__()
         self._tx_data = tx_data
